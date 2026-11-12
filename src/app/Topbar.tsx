@@ -1,20 +1,10 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Loader2, Search } from "lucide-react";
 import type { Platform } from "../types/riot";
-
-const REGIONS: { value: Platform; label: string }[] = [
-  { value: "br1", label: "BR" },
-  { value: "la1", label: "LAN" },
-  { value: "la2", label: "LAS" },
-  { value: "na1", label: "NA" },
-  { value: "euw1", label: "EUW" },
-  { value: "eun1", label: "EUNE" },
-  { value: "kr", label: "KR" },
-  { value: "jp1", label: "JP" },
-  { value: "oc1", label: "OCE" },
-  { value: "tr1", label: "TR" },
-  { value: "ru", label: "RU" },
-];
+import { REGIONS } from "../lib/regions";
+import { parseRiotId, searchPlayer } from "../services/playerApi";
+import { errorMessage } from "../hooks/useAsync";
 
 function useOnline() {
   const [online, setOnline] = useState(navigator.onLine);
@@ -33,31 +23,63 @@ function useOnline() {
 export function Topbar() {
   const [query, setQuery] = useState("");
   const [region, setRegion] = useState<Platform>("br1");
+  const [searching, setSearching] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const online = useOnline();
+  const navigate = useNavigate();
 
-  function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    // RF01: a busca real (Riot ID → PUUID) entra na integração com a Riot API.
+    if (searching) return;
+    const id = parseRiotId(query);
+    if (typeof id === "string") {
+      setError(id);
+      return;
+    }
+    setError(null);
+    setSearching(true);
+    try {
+      const profile = await searchPlayer(id, region);
+      setQuery("");
+      navigate(`/player/${profile.player.puuid}`, { state: { warning: profile.warning } });
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setSearching(false);
+    }
   }
 
   return (
     <header className="topbar">
-      <form className="search" onSubmit={onSubmit} role="search">
-        <Search size={16} />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar Riot ID — ex.: Nome#BR1"
-          aria-label="Riot ID"
-        />
-        <select value={region} onChange={(e) => setRegion(e.target.value as Platform)} aria-label="Região">
-          {REGIONS.map((r) => (
-            <option key={r.value} value={r.value}>
-              {r.label}
-            </option>
-          ))}
-        </select>
-      </form>
+      <div className="search-wrap">
+        <form className={`search${error ? " has-error" : ""}`} onSubmit={onSubmit} role="search">
+          {searching ? <Loader2 size={16} className="spin" /> : <Search size={16} />}
+          <input
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              if (error) setError(null);
+            }}
+            placeholder="Buscar Riot ID — ex.: Nome#BR1"
+            aria-label="Riot ID"
+            aria-invalid={!!error}
+            aria-describedby={error ? "search-error" : undefined}
+            disabled={searching}
+          />
+          <select value={region} onChange={(e) => setRegion(e.target.value as Platform)} aria-label="Região">
+            {REGIONS.map((r) => (
+              <option key={r.value} value={r.value}>
+                {r.label}
+              </option>
+            ))}
+          </select>
+        </form>
+        {error && (
+          <div className="search-error" id="search-error" role="alert">
+            {error}
+          </div>
+        )}
+      </div>
       <div className="topbar__spacer" />
       <div className={`sync-status${online ? "" : " is-offline"}`} title="Os dados exibidos vêm do banco local">
         <span className="sync-status__dot" />

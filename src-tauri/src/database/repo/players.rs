@@ -75,6 +75,15 @@ pub fn find_by_riot_id(
         .optional()?)
 }
 
+/// Jogadores consultados, do mais recente para o mais antigo.
+pub fn list_recent(conn: &Connection, limit: u32) -> AppResult<Vec<PlayerRecord>> {
+    let mut stmt = conn.prepare(&format!(
+        "SELECT {COLUMNS} FROM players ORDER BY updated_at DESC LIMIT ?1"
+    ))?;
+    let rows = stmt.query_map([limit], from_row)?;
+    Ok(rows.collect::<Result<_, _>>()?)
+}
+
 pub fn mark_synced(conn: &Connection, puuid: &str, at: i64) -> AppResult<()> {
     conn.execute(
         "UPDATE players SET last_synced_at = ?2 WHERE puuid = ?1",

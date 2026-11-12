@@ -466,3 +466,57 @@ button, input, select { font: inherit; color: inherit; }
   text-overflow: ellipsis;
 }
 a.btn { text-decoration: none; color: var(--text-primary); }
+
+/* ---------- Busca: erro e carregamento ---------- */
+.search-wrap { position: relative; width: min(460px, 100%); }
+.search-wrap .search { width: 100%; }
+.search.has-error { border-color: var(--loss); }
+.search-error {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 10;
+  background: var(--surface-3);
+  border: 1px solid var(--loss);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+.spin { animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.btn:disabled { opacity: 0.6; cursor: default; }
+
+/* ---------- Aviso ---------- */
+.notice {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-1);
+  font-size: 13px;
+}
+.notice--warning { border-color: rgba(250, 178, 25, 0.4); background: rgba(250, 178, 25, 0.06); }
+.notice--warning svg { color: var(--status-warning); flex-shrink: 0; margin-top: 1px; }
+
+/* ---------- Lista de jogadores ---------- */
+.player-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.player-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.player-item:hover { border-color: var(--accent); background: var(--surface-3); }
+.player-item__name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.profile__icon--sm { width: 40px; height: 40px; border-radius: 10px; font-size: 16px; border-width: 1px; }
