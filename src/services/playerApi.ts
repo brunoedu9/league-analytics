@@ -5,7 +5,7 @@
 import { listen } from "@tauri-apps/api/event";
 import { call, isTauri } from "./tauri";
 import type { Platform, RiotId } from "../types/riot";
-import type { Division, MatchSummary, QueueType, RankEntry, Tier } from "../types/models";
+import type { Division, MatchSummary, Position, QueueType, RankEntry, Tier } from "../types/models";
 
 export interface StoredPlayer {
   puuid: string;
@@ -115,3 +115,54 @@ export async function onSyncProgress(handler: (p: SyncProgress) => void): Promis
   if (!isTauri()) return () => {};
   return listen<SyncProgress>("sync-progress", (event) => handler(event.payload));
 }
+
+export interface ParticipantDetail {
+  participantIndex: number;
+  puuid: string;
+  riotIdGameName: string | null;
+  riotIdTagline: string | null;
+  teamId: number; // 100 = azul, 200 = vermelho
+  champion: string;
+  championIcon: string | null;
+  position: Position | "";
+  win: boolean;
+  champLevel: number;
+  kills: number;
+  deaths: number;
+  assists: number;
+  cs: number;
+  gold: number;
+  damage: number;
+  damageTaken: number;
+  visionScore: number;
+  wardsPlaced: number;
+  wardsKilled: number;
+  controlWards: number;
+  turretTakedowns: number;
+  dragonKills: number;
+  baronKills: number;
+}
+
+export interface MatchDetails {
+  matchId: string;
+  platform: string;
+  queue: MatchSummary["queue"];
+  queueId: number;
+  gameMode: string;
+  gameVersion: string;
+  playedAt: string;
+  durationSec: number;
+  participants: ParticipantDetail[];
+}
+
+export interface Timeline {
+  frameIntervalMs: number;
+  /** goldFrames[quadro][participantIndex - 1] */
+  goldFrames: number[][];
+}
+
+/** Partida completa, do banco local. */
+export const getMatchDetails = (matchId: string) => call<MatchDetails>("get_match_details", { matchId });
+
+/** Ouro por participante ao longo da partida (cache local; 1ª vez busca na Riot). */
+export const getMatchTimeline = (matchId: string) => call<Timeline>("get_match_timeline", { matchId });

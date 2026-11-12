@@ -26,7 +26,7 @@ import type { MatchSummary } from "../../types/models";
 const isoFromMs = (ms: number) => new Date(ms).toISOString();
 const PAGE = 10;
 
-function MatchesSection({ matches }: { matches: MatchSummary[] }) {
+function MatchesSection({ matches, puuid }: { matches: MatchSummary[]; puuid: string }) {
   const [visible, setVisible] = useState(PAGE);
   const stats = aggregate(matches);
   const top = championStats(matches).slice(0, 5);
@@ -53,7 +53,7 @@ function MatchesSection({ matches }: { matches: MatchSummary[] }) {
         <Card flush title="Partidas" subtitle={`${matches.length} salvas no banco local`}>
           <div className="match-list">
             {matches.slice(0, visible).map((m) => (
-              <MatchRow key={m.matchId} match={m} />
+              <MatchRow key={m.matchId} match={m} focusPuuid={puuid} />
             ))}
           </div>
           {visible < matches.length && (
@@ -166,7 +166,7 @@ function PlayerByPuuid({ puuid }: { puuid: string }) {
               <RecentForm matches={matches.slice(0, 20)} />
             </Card>
           </div>
-          <MatchesSection matches={matches} />
+          <MatchesSection matches={matches} puuid={puuid} />
         </>
       )}
     </div>

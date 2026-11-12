@@ -3,7 +3,7 @@
 - **Arquivo:** `%APPDATA%\com.leagueanalytics.app\league-analytics.db`
 - **Driver:** `rusqlite` com SQLite embutido (`bundled`), sem dependência instalada no Windows.
 - **Modo:** WAL (leituras das telas não bloqueiam a escrita da sincronização), `foreign_keys = ON`.
-- **Esquema:** [`src-tauri/migrations/0001_initial.sql`](../src-tauri/migrations/0001_initial.sql)
+- **Esquema:** [`0001_initial.sql`](../src-tauri/migrations/0001_initial.sql), [`0002_match_timelines.sql`](../src-tauri/migrations/0002_match_timelines.sql)
 - **Código:** `src-tauri/src/database/` (`migrations.rs`, `models.rs`, `repo/`)
 
 ## Tabelas
@@ -17,7 +17,8 @@
 | `rank_history` | Fotografias do elo, gravadas só quando mudam | `id`; índice `(puuid, queue_type, recorded_at)` |
 | `champions` | Dados estáticos do Data Dragon (nome de exibição, ícone) | `champion_id` |
 | `sync_history` | Cada sincronização: tipo, status, partidas novas, erro | `id` |
-| `settings` | Configurações do usuário (chave/valor) | `key` |
+| `settings` | Configurações do usuário (chave/valor), ex.: `active_player` | `key` |
+| `match_timelines` | Resumo da linha do tempo (ouro por participante a cada minuto), baixado na 1ª análise | `match_id` |
 
 ## Convenções
 

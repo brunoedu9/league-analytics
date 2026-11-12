@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import type { MatchSummary } from "../types/models";
 import {
   QUEUE_SHORT,
@@ -12,10 +13,15 @@ import {
 import { ChampionIcon } from "./ChampionIcon";
 import { ResultBadge } from "./Badge";
 
-export function MatchRow({ match }: { match: MatchSummary }) {
+/** Linha de partida; clicar abre a Análise de partida (com `focusPuuid` em destaque). */
+export function MatchRow({ match, focusPuuid }: { match: MatchSummary; focusPuuid?: string }) {
   const minutes = match.durationSec / 60;
   return (
-    <div className={`match-row ${match.win ? "is-win" : "is-loss"}`}>
+    <Link
+      to={`/match-analysis/${match.matchId}${focusPuuid ? `?p=${encodeURIComponent(focusPuuid)}` : ""}`}
+      className={`match-row ${match.win ? "is-win" : "is-loss"}`}
+      aria-label={`${match.win ? "Vitória" : "Derrota"} de ${match.champion}, ${match.kills}/${match.deaths}/${match.assists}. Abrir análise`}
+    >
       <div className="match-row__stripe" />
       <ChampionIcon name={match.champion} src={match.championIcon} size={40} />
       <div>
@@ -44,6 +50,6 @@ export function MatchRow({ match }: { match: MatchSummary }) {
           {formatDuration(match.durationSec)} · {formatRelative(match.playedAt)}
         </small>
       </div>
-    </div>
+    </Link>
   );
 }

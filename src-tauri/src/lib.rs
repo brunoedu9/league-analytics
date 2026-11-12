@@ -35,6 +35,8 @@ pub fn run() {
             commands::player::get_player_profile,
             commands::player::list_players,
             commands::sync::sync_player_matches,
+            commands::matches::get_match_details,
+            commands::matches::get_match_timeline,
             commands::database::db_status,
             commands::database::get_setting,
             commands::database::set_setting,

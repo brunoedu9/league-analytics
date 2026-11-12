@@ -298,5 +298,22 @@ mod tests {
             named[0].champion, named[0].champion_icon
         );
         assert!(named.iter().all(|m| m.champion_icon.is_some()));
+
+        // Linha do tempo: 1ª vez da Riot, 2ª do cache.
+        let first_id = &named[0].match_id;
+        let t = crate::services::timeline::get_or_fetch(&db, &riot, first_id)
+            .await
+            .expect("timeline");
+        println!(
+            "timeline: {} quadros, ouro final do participante 1 = {}",
+            t.gold_frames.len(),
+            t.gold_frames.last().map(|f| f[0]).unwrap_or(0)
+        );
+        assert!(t.gold_frames.len() > 10);
+        let cached = db
+            .with(|c| repo::timelines::get(c, first_id))
+            .unwrap()
+            .expect("salva no banco");
+        assert_eq!(cached, t);
     }
 }

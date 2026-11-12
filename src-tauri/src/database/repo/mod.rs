@@ -8,6 +8,7 @@ pub mod ranks;
 pub mod settings;
 pub mod status;
 pub mod sync;
+pub mod timelines;
 
 #[cfg(test)]
 pub(crate) mod fixtures;

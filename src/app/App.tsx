@@ -3,6 +3,7 @@ import { AppLayout } from "./AppLayout";
 import { navigation } from "./navigation";
 import { PlayerPage } from "../features/player/PlayerPage";
 import { ActivePlayerProvider } from "./ActivePlayer";
+import { MatchAnalysisPage } from "../features/match-analysis/MatchAnalysisPage";
 
 export function App() {
   return (
@@ -15,6 +16,7 @@ export function App() {
               <Route key={path} path={path} element={element} />
             ))}
             <Route path="/player/:puuid" element={<PlayerPage />} />
+            <Route path="/match-analysis/:matchId" element={<MatchAnalysisPage />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
         </Routes>

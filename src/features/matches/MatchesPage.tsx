@@ -16,7 +16,7 @@ type QueueFilter = "ALL" | MatchQueue;
 type ResultFilter = "ALL" | "WIN" | "LOSS";
 
 /** RF03 — Histórico de partidas armazenadas localmente. */
-function Matches({ matches }: { matches: MatchSummary[] }) {
+function Matches({ matches, puuid }: { matches: MatchSummary[]; puuid: string }) {
   const [queue, setQueue] = useState<QueueFilter>("ALL");
   const [result, setResult] = useState<ResultFilter>("ALL");
 
@@ -84,7 +84,7 @@ function Matches({ matches }: { matches: MatchSummary[] }) {
                 : "Nenhuma partida com esses filtros."}
             </div>
           ) : (
-            filtered.map((m) => <MatchRow key={m.matchId} match={m} />)
+            filtered.map((m) => <MatchRow key={m.matchId} match={m} focusPuuid={puuid} />)
           )}
         </div>
       </Card>
@@ -94,7 +94,7 @@ function Matches({ matches }: { matches: MatchSummary[] }) {
 
 function MatchesForPlayer({ puuid }: { puuid: string }) {
   const state = useAsync(() => getRecentMatches(puuid, 500), [puuid]);
-  return <AsyncView state={state}>{(data) => <Matches matches={data} />}</AsyncView>;
+  return <AsyncView state={state}>{(data) => <Matches matches={data} puuid={puuid} />}</AsyncView>;
 }
 
 export function MatchesPage() {
