@@ -38,7 +38,7 @@ export function AppLayout() {
             </nav>
           </div>
         ))}
-        <div className="sidebar__footer">v0.1.0 · dados fictícios</div>
+        <div className="sidebar__footer">v0.1.0 · dados locais</div>
       </aside>
       <div className="main">
         <Topbar />

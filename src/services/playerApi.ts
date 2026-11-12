@@ -77,6 +77,19 @@ export async function getPlayerProfile(puuid: string): Promise<PlayerProfile> {
 
 export const listPlayers = (limit = 12) => call<StoredPlayer[]>("list_players", { limit });
 
+export interface RankPoint {
+  recordedAt: number; // ms desde a época Unix
+  tier: Tier;
+  division: Division | null;
+  leaguePoints: number;
+  wins: number;
+  losses: number;
+}
+
+/** Histórico de elo (Solo/Duo por padrão), do mais antigo ao mais recente. */
+export const getRankHistory = (puuid: string, queue: QueueType = "RANKED_SOLO_5x5") =>
+  call<RankPoint[]>("get_rank_history", { puuid, queue });
+
 /** Partidas do jogador salvas no banco local (mais recentes primeiro). */
 export const getRecentMatches = (puuid: string, limit = 50) =>
   call<MatchSummary[]>("get_recent_matches", { puuid, limit });

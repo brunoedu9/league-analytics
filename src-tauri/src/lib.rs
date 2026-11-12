@@ -41,6 +41,7 @@ pub fn run() {
             commands::database::find_player,
             commands::database::get_player_ranks,
             commands::database::get_recent_matches,
+            commands::database::get_rank_history,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

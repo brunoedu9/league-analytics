@@ -1,4 +1,4 @@
-import type { Division, Tier } from "../types/models";
+import type { Division, LpPoint, Tier } from "../types/models";
 import { TIER_LABEL } from "./format";
 
 /**
@@ -28,4 +28,15 @@ export function fromLadderValue(value: number): { tier: Tier; division: Division
 export function ladderTickLabel(value: number): string {
   const { tier, division } = fromLadderValue(value);
   return division ? `${TIER_LABEL[tier]} ${division}` : TIER_LABEL[tier];
+}
+
+/** Converte o histórico de elo salvo no banco em pontos do gráfico de PDL. */
+export function toLpPoints(
+  points: { recordedAt: number; tier: Tier; division: Division | null; leaguePoints: number }[],
+): LpPoint[] {
+  return points.map((p) => ({
+    date: new Date(p.recordedAt).toISOString(),
+    ladderValue: toLadderValue(p.tier, p.division, p.leaguePoints),
+    label: `${p.division ? `${TIER_LABEL[p.tier]} ${p.division}` : TIER_LABEL[p.tier]} · ${p.leaguePoints} PDL`,
+  }));
 }

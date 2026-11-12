@@ -53,6 +53,45 @@ pub fn record(conn: &Connection, puuid: &str, rank: &RankSnapshot, at: i64) -> A
     Ok(true)
 }
 
+/// Um ponto do histórico de elo (para o gráfico de evolução de PDL).
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RankPoint {
+    pub recorded_at: i64,
+    pub tier: String,
+    pub division: Option<String>,
+    pub league_points: i64,
+    pub wins: i64,
+    pub losses: i64,
+}
+
+/// Histórico de uma fila, do mais antigo para o mais recente (até `limit` pontos).
+pub fn history(
+    conn: &Connection,
+    puuid: &str,
+    queue_type: &str,
+    limit: u32,
+) -> AppResult<Vec<RankPoint>> {
+    let mut stmt = conn.prepare(
+        "SELECT recorded_at, tier, division, league_points, wins, losses FROM (
+            SELECT * FROM rank_history
+             WHERE puuid = ?1 AND queue_type = ?2
+             ORDER BY recorded_at DESC, id DESC LIMIT ?3
+         ) ORDER BY recorded_at ASC, id ASC",
+    )?;
+    let rows = stmt.query_map(params![puuid, queue_type, limit], |r| {
+        Ok(RankPoint {
+            recorded_at: r.get(0)?,
+            tier: r.get(1)?,
+            division: r.get(2)?,
+            league_points: r.get(3)?,
+            wins: r.get(4)?,
+            losses: r.get(5)?,
+        })
+    })?;
+    Ok(rows.collect::<Result<_, _>>()?)
+}
+
 /// Elo mais recente de cada fila do jogador.
 pub fn latest(conn: &Connection, puuid: &str) -> AppResult<Vec<RankSnapshot>> {
     let mut result = Vec::new();
@@ -90,6 +129,13 @@ mod tests {
             let count: i64 = c.query_row("SELECT count(*) FROM rank_history", [], |r| r.get(0))?;
             assert_eq!(count, 2);
             assert_eq!(latest(c, "me")?, vec![gold(61, 11)]);
+            let points = history(c, "me", "RANKED_SOLO_5x5", 10)?;
+            assert_eq!(
+                points.iter().map(|p| p.league_points).collect::<Vec<_>>(),
+                vec![40, 61],
+                "do mais antigo para o mais recente"
+            );
+            assert_eq!(history(c, "me", "RANKED_SOLO_5x5", 1)?[0].league_points, 61);
             Ok(())
         })
         .unwrap();

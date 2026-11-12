@@ -6,7 +6,9 @@ import { ChampionIcon } from "../../components/ChampionIcon";
 import { WinLossBar } from "../../components/WinLossBar";
 import { AsyncView } from "../../components/AsyncView";
 import { useAsync } from "../../hooks/useAsync";
-import { getChampionStats } from "../../services/playerService";
+import { getRecentMatches } from "../../services/playerApi";
+import { championStats } from "../../lib/stats";
+import { RequireActivePlayer } from "../../components/RequireActivePlayer";
 import {
   formatDecimal,
   formatKda,
@@ -66,6 +68,9 @@ function Champions({ champions }: { champions: ChampionStats[] }) {
   return (
     <div className="page">
       <PageHeader title="Campeões" description={`${champions.length} campeões nas partidas armazenadas`} />
+      {champions.length === 0 ? (
+        <div className="placeholder">Nenhuma partida salva ainda. Atualize o jogador principal no Dashboard.</div>
+      ) : (
       <Card flush>
         <table className="table">
           <thead>
@@ -126,11 +131,20 @@ function Champions({ champions }: { champions: ChampionStats[] }) {
           </tbody>
         </table>
       </Card>
+      )}
     </div>
   );
 }
 
-export function ChampionsPage() {
-  const state = useAsync(getChampionStats);
+function ChampionsForPlayer({ puuid }: { puuid: string }) {
+  const state = useAsync(async () => championStats(await getRecentMatches(puuid, 500)), [puuid]);
   return <AsyncView state={state}>{(data) => <Champions champions={data} />}</AsyncView>;
+}
+
+export function ChampionsPage() {
+  return (
+    <RequireActivePlayer title="Campeões">
+      {(puuid) => <ChampionsForPlayer key={puuid} puuid={puuid} />}
+    </RequireActivePlayer>
+  );
 }

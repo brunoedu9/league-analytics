@@ -1,25 +1,22 @@
-import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { AlertTriangle, Crosshair, Eye, History, RefreshCw, Search, Swords, Trophy } from "lucide-react";
+import { useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { AlertTriangle, Crosshair, Eye, History, RefreshCw, Search, Star, Swords, Trophy } from "lucide-react";
 import { PageHeader } from "../../components/PageHeader";
 import { Card } from "../../components/Card";
-import { RankBadge } from "../../components/RankBadge";
+import { ProfileCard } from "../../components/ProfileCard";
+import { Badge } from "../../components/Badge";
 import { WinLossBar } from "../../components/WinLossBar";
 import { StatCard } from "../../components/StatCard";
 import { MatchRow } from "../../components/MatchRow";
 import { TopChampions } from "../../components/TopChampions";
 import { WinRateTrendChart } from "../../components/charts/WinRateTrendChart";
 import { errorMessage, useAsync } from "../../hooks/useAsync";
+import { SYNC_COUNT, usePlayerRefresh } from "../../hooks/usePlayerRefresh";
+import { useActivePlayer } from "../../app/ActivePlayer";
 import {
   getPlayerProfile,
   getRecentMatches,
   listPlayers,
-  onSyncProgress,
-  searchPlayer,
-  syncMatches,
-  type PlayerProfile,
-  type StoredPlayer,
-  type SyncProgress,
 } from "../../services/playerApi";
 import { regionName } from "../../lib/regions";
 import { formatDecimal, formatPercent, formatRelative } from "../../lib/format";
@@ -27,52 +24,7 @@ import { aggregate, championStats } from "../../lib/stats";
 import type { MatchSummary } from "../../types/models";
 
 const isoFromMs = (ms: number) => new Date(ms).toISOString();
-const SYNC_COUNT = 20;
 const PAGE = 10;
-
-function ProfileIcon({ player }: { player: StoredPlayer }) {
-  return (
-    <div className="profile__icon">
-      {player.gameName[0]?.toUpperCase()}
-      <span className="profile__level num">{player.summonerLevel}</span>
-    </div>
-  );
-}
-
-function ProfileCard({ profile }: { profile: PlayerProfile }) {
-  const { player, ranks } = profile;
-  return (
-    <Card>
-      <div className="profile">
-        <ProfileIcon player={player} />
-        <div>
-          <div className="profile__name">
-            {player.gameName} <span className="profile__tag">#{player.tagLine}</span>
-          </div>
-          <div className="profile__meta">
-            {regionName(player.platform)} · Nível {player.summonerLevel}
-          </div>
-        </div>
-      </div>
-      {ranks.length === 0 ? (
-        <>
-          <div className="divider" />
-          <div className="muted">Sem partidas ranqueadas nesta temporada.</div>
-        </>
-      ) : (
-        ranks.map((rank) => (
-          <div key={rank.queue}>
-            <div className="divider" />
-            <RankBadge rank={rank} />
-            <div style={{ marginTop: 12 }}>
-              <WinLossBar wins={rank.wins} losses={rank.losses} />
-            </div>
-          </div>
-        ))
-      )}
-    </Card>
-  );
-}
 
 function MatchesSection({ matches }: { matches: MatchSummary[] }) {
   const [visible, setVisible] = useState(PAGE);
@@ -130,18 +82,12 @@ function MatchesSection({ matches }: { matches: MatchSummary[] }) {
 function PlayerByPuuid({ puuid }: { puuid: string }) {
   const location = useLocation();
   const [reloadKey, setReloadKey] = useState(0);
-  const [busy, setBusy] = useState(false);
-  const [progress, setProgress] = useState<SyncProgress | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const profileState = useAsync(() => getPlayerProfile(puuid), [puuid, reloadKey]);
   const matchesState = useAsync(() => getRecentMatches(puuid, 100), [puuid, reloadKey]);
   const navWarning = (location.state as { warning?: string | null } | null)?.warning ?? null;
-
-  useEffect(() => {
-    let unlisten: (() => void) | undefined;
-    onSyncProgress((p) => p.puuid === puuid && setProgress(p)).then((fn) => (unlisten = fn));
-    return () => unlisten?.();
-  }, [puuid]);
+  const active = useActivePlayer();
+  const loadedPlayer = profileState.status === "success" ? profileState.data.player : null;
+  const { refresh, busy, label, notice } = usePlayerRefresh(loadedPlayer, () => setReloadKey((k) => k + 1));
 
   if (profileState.status === "loading") {
     return (
@@ -156,34 +102,8 @@ function PlayerByPuuid({ puuid }: { puuid: string }) {
   const { player } = profile;
   const matches = matchesState.status === "success" ? matchesState.data : [];
 
-  /** Atualiza perfil e elo e baixa as partidas que faltam. */
-  async function refresh() {
-    setBusy(true);
-    setNotice(null);
-    setProgress(null);
-    try {
-      const updated = await searchPlayer({ gameName: player.gameName, tagLine: player.tagLine }, player.platform);
-      if (updated.warning) {
-        // Riot inacessível: não adianta tentar baixar partidas.
-        setNotice(updated.warning);
-        return;
-      }
-      await syncMatches(puuid, SYNC_COUNT);
-    } catch (err) {
-      setNotice(errorMessage(err));
-    } finally {
-      setBusy(false);
-      setProgress(null);
-      setReloadKey((k) => k + 1);
-    }
-  }
-
   const warning = notice ?? (reloadKey === 0 ? navWarning : null);
-  const buttonLabel = !busy
-    ? "Atualizar"
-    : progress && progress.total > 0
-      ? `Baixando partidas ${progress.done}/${progress.total}`
-      : "Atualizando…";
+  const isActive = active.puuid === puuid;
 
   return (
     <div className="page">
@@ -195,10 +115,18 @@ function PlayerByPuuid({ puuid }: { puuid: string }) {
             : `Perfil atualizado ${formatRelative(isoFromMs(player.updatedAt))} · partidas ainda não sincronizadas`
         }
         actions={
-          <button className="btn btn--primary" type="button" onClick={refresh} disabled={busy}>
-            <RefreshCw size={15} className={busy ? "spin" : undefined} />
-            {buttonLabel}
-          </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            {!isActive && (
+              <button className="btn" type="button" onClick={() => active.setActive(puuid)}>
+                <Star size={15} />
+                Definir como principal
+              </button>
+            )}
+            <button className="btn btn--primary" type="button" onClick={refresh} disabled={busy}>
+              <RefreshCw size={15} className={busy ? "spin" : undefined} />
+              {label}
+            </button>
+          </div>
         }
       />
 
@@ -213,7 +141,7 @@ function PlayerByPuuid({ puuid }: { puuid: string }) {
 
       {matches.length === 0 ? (
         <div className="grid grid--hero">
-          <ProfileCard profile={profile} />
+          <ProfileCard profile={profile} badge={isActive ? <Badge variant="accent"><Star size={11} /> Jogador principal</Badge> : undefined} />
           <Card title="Partidas" subtitle="Histórico e estatísticas deste jogador">
             <div className="empty">
               <History size={22} style={{ marginBottom: 8 }} />
@@ -233,7 +161,7 @@ function PlayerByPuuid({ puuid }: { puuid: string }) {
       ) : (
         <>
           <div className="grid grid--hero">
-            <ProfileCard profile={profile} />
+            <ProfileCard profile={profile} badge={isActive ? <Badge variant="accent"><Star size={11} /> Jogador principal</Badge> : undefined} />
             <Card title="Últimas partidas" subtitle="Resultado e KDA das partidas mais recentes">
               <RecentForm matches={matches.slice(0, 20)} />
             </Card>
@@ -304,9 +232,6 @@ function RecentPlayers() {
           </div>
         )}
       </Card>
-      <div className="muted" style={{ fontSize: 12 }}>
-        O Dashboard ainda usa dados fictícios. <Link to="/dashboard">Ver Dashboard</Link>
-      </div>
     </div>
   );
 }

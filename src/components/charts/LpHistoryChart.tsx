@@ -36,7 +36,7 @@ export function LpHistoryChart({ data }: { data: LpPoint[] }) {
             domain={[min, max]}
             ticks={ticks}
             tickFormatter={ladderTickLabel}
-            width={56}
+            width={88}
             {...axisProps}
           />
           <Tooltip
