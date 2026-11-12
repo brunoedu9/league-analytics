@@ -6,7 +6,8 @@ import { Segmented } from "../../components/Segmented";
 import { WinLossBar } from "../../components/WinLossBar";
 import { AsyncView } from "../../components/AsyncView";
 import { useAsync } from "../../hooks/useAsync";
-import { getMatches } from "../../services/playerService";
+import { getRecentMatches } from "../../services/playerApi";
+import { RequireActivePlayer } from "../../components/RequireActivePlayer";
 import { aggregate } from "../../lib/stats";
 import { formatDecimal } from "../../lib/format";
 import type { MatchQueue, MatchSummary } from "../../types/models";
@@ -44,6 +45,7 @@ function Matches({ matches }: { matches: MatchSummary[] }) {
             { value: "SOLO", label: "Solo/Duo" },
             { value: "FLEX", label: "Flex" },
             { value: "NORMAL", label: "Normal" },
+            { value: "ARAM", label: "ARAM" },
           ]}
         />
         <Segmented
@@ -76,7 +78,11 @@ function Matches({ matches }: { matches: MatchSummary[] }) {
       >
         <div className="match-list" style={{ marginTop: 4 }}>
           {filtered.length === 0 ? (
-            <div className="empty">Nenhuma partida com esses filtros.</div>
+            <div className="empty">
+              {matches.length === 0
+                ? "Nenhuma partida salva ainda. Atualize o jogador principal no Dashboard."
+                : "Nenhuma partida com esses filtros."}
+            </div>
           ) : (
             filtered.map((m) => <MatchRow key={m.matchId} match={m} />)
           )}
@@ -86,7 +92,15 @@ function Matches({ matches }: { matches: MatchSummary[] }) {
   );
 }
 
-export function MatchesPage() {
-  const state = useAsync(getMatches);
+function MatchesForPlayer({ puuid }: { puuid: string }) {
+  const state = useAsync(() => getRecentMatches(puuid, 500), [puuid]);
   return <AsyncView state={state}>{(data) => <Matches matches={data} />}</AsyncView>;
+}
+
+export function MatchesPage() {
+  return (
+    <RequireActivePlayer title="Histórico de partidas">
+      {(puuid) => <MatchesForPlayer key={puuid} puuid={puuid} />}
+    </RequireActivePlayer>
+  );
 }

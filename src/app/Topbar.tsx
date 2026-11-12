@@ -5,6 +5,7 @@ import type { Platform } from "../types/riot";
 import { REGIONS } from "../lib/regions";
 import { parseRiotId, searchPlayer } from "../services/playerApi";
 import { errorMessage } from "../hooks/useAsync";
+import { useActivePlayer } from "./ActivePlayer";
 
 function useOnline() {
   const [online, setOnline] = useState(navigator.onLine);
@@ -27,6 +28,7 @@ export function Topbar() {
   const [error, setError] = useState<string | null>(null);
   const online = useOnline();
   const navigate = useNavigate();
+  const activePlayer = useActivePlayer();
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -41,6 +43,8 @@ export function Topbar() {
     try {
       const profile = await searchPlayer(id, region);
       setQuery("");
+      // O primeiro jogador pesquisado vira o jogador principal.
+      if (activePlayer.ready && !activePlayer.puuid) await activePlayer.setActive(profile.player.puuid);
       navigate(`/player/${profile.player.puuid}`, { state: { warning: profile.warning } });
     } catch (err) {
       setError(errorMessage(err));

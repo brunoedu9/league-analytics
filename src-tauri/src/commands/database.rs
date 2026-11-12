@@ -35,6 +35,19 @@ pub fn get_player_ranks(db: State<'_, Database>, puuid: String) -> AppResult<Vec
     db.with(|c| repo::ranks::latest(c, &puuid))
 }
 
+/// Histórico de elo de uma fila (padrão: Solo/Duo), do mais antigo ao mais recente.
+#[tauri::command]
+pub fn get_rank_history(
+    db: State<'_, Database>,
+    puuid: String,
+    queue: Option<String>,
+    limit: Option<u32>,
+) -> AppResult<Vec<repo::ranks::RankPoint>> {
+    let queue = queue.unwrap_or_else(|| "RANKED_SOLO_5x5".into());
+    let limit = limit.unwrap_or(200).min(1000);
+    db.with(|c| repo::ranks::history(c, &puuid, &queue, limit))
+}
+
 #[tauri::command]
 pub fn get_recent_matches(
     db: State<'_, Database>,

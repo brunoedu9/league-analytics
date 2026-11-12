@@ -1,9 +1,7 @@
 /**
  * Modelos de domínio usados pela interface.
- * Espelham o que os comandos Rust vão devolver a partir do SQLite (docs/DATABASE.md).
+ * Espelham o que os comandos Rust devolvem a partir do SQLite (docs/DATABASE.md).
  */
-import type { Platform } from "./riot";
-
 export type Tier =
   | "IRON" | "BRONZE" | "SILVER" | "GOLD" | "PLATINUM" | "EMERALD"
   | "DIAMOND" | "MASTER" | "GRANDMASTER" | "CHALLENGER";
@@ -15,16 +13,6 @@ export type QueueType = "RANKED_SOLO_5x5" | "RANKED_FLEX_SR";
 export type Position = "TOP" | "JUNGLE" | "MIDDLE" | "BOTTOM" | "UTILITY";
 
 export type MatchQueue = "SOLO" | "FLEX" | "NORMAL" | "ARAM" | "OTHER";
-
-export interface Player {
-  puuid: string;
-  gameName: string;
-  tagLine: string;
-  platform: Platform;
-  profileIconId: number;
-  summonerLevel: number;
-  lastSyncedAt: string; // ISO 8601
-}
 
 export interface RankEntry {
   queue: QueueType;
@@ -76,11 +64,4 @@ export interface ChampionStats {
   mainPosition: Position | "";
   championIcon?: string | null;
   lastPlayedAt: string;
-}
-
-export interface PlayerOverview {
-  player: Player;
-  ranks: RankEntry[];
-  recentMatches: MatchSummary[];
-  lpHistory: LpPoint[];
 }
