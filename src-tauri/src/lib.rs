@@ -25,10 +25,14 @@ pub fn run() {
             let path = app.path().app_data_dir()?.join(DB_FILE_NAME);
             let db = Database::open(&path)?;
             app.manage(db);
+            app.manage(services::riot::RiotClient::new()?);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             commands::app::app_info,
+            commands::player::search_player,
+            commands::player::get_player_profile,
+            commands::player::list_players,
             commands::database::db_status,
             commands::database::get_setting,
             commands::database::set_setting,

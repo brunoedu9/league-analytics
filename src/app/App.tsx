@@ -1,6 +1,7 @@
 import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AppLayout } from "./AppLayout";
 import { navigation } from "./navigation";
+import { PlayerPage } from "../features/player/PlayerPage";
 
 export function App() {
   return (
@@ -11,6 +12,7 @@ export function App() {
           {navigation.map(({ path, element }) => (
             <Route key={path} path={path} element={element} />
           ))}
+          <Route path="/player/:puuid" element={<PlayerPage />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>
