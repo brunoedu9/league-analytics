@@ -50,7 +50,10 @@ export interface MatchSummary {
   durationSec: number;
   win: boolean;
   champion: string;
-  position: Position;
+  /** URL do ícone no Data Dragon; ausente até os campeões serem baixados. */
+  championIcon?: string | null;
+  /** Vazio em modos sem posição (ARAM, Arena). */
+  position: Position | "";
   kills: number;
   deaths: number;
   assists: number;
@@ -70,7 +73,8 @@ export interface ChampionStats {
   deaths: number;
   assists: number;
   csPerMin: number;
-  mainPosition: Position;
+  mainPosition: Position | "";
+  championIcon?: string | null;
   lastPlayedAt: string;
 }
 

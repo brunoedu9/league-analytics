@@ -2,8 +2,10 @@
 //!
 //! - `riot`: cliente da Riot API (chave via `.env`, controle de ritmo, 429).
 //! - `player`: pesquisa de jogador por Riot ID, com fallback para dados locais.
-//!
-//! Planejado: `ddragon` (dados estáticos) e `sync` (partidas → SQLite).
+//! - `sync`: partidas da Riot → SQLite (só as que faltam).
+//! - `ddragon`: nomes e ícones dos campeões (Data Dragon).
 
+pub mod ddragon;
 pub mod player;
 pub mod riot;
+pub mod sync;

@@ -6,7 +6,7 @@ import { StatCard } from "../../components/StatCard";
 import { RankBadge } from "../../components/RankBadge";
 import { WinLossBar } from "../../components/WinLossBar";
 import { MatchRow } from "../../components/MatchRow";
-import { ChampionIcon } from "../../components/ChampionIcon";
+import { TopChampions } from "../../components/TopChampions";
 import { AsyncView } from "../../components/AsyncView";
 import { LpHistoryChart } from "../../components/charts/LpHistoryChart";
 import { WinRateTrendChart } from "../../components/charts/WinRateTrendChart";
@@ -15,10 +15,8 @@ import { getPlayerOverview } from "../../services/playerService";
 import { aggregate, championStats } from "../../lib/stats";
 import {
   formatDecimal,
-  formatKda,
   formatPercent,
   formatRelative,
-  POSITION_LABEL,
 } from "../../lib/format";
 import type { PlayerOverview } from "../../types/models";
 
@@ -131,26 +129,7 @@ function Dashboard({ data }: { data: PlayerOverview }) {
             <WinRateTrendChart matches={recentMatches} />
           </Card>
           <Card title="Campeões mais jogados" subtitle={`Nas últimas ${stats.games} partidas`}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {topChampions.map((c) => (
-                <div key={c.champion} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <ChampionIcon name={c.champion} size={36} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                      <span>
-                        <strong>{c.champion}</strong>{" "}
-                        <span className="muted">· {POSITION_LABEL[c.mainPosition]}</span>
-                      </span>
-                      <span className="num secondary">
-                        {formatPercent(c.wins / c.games)} · {c.games}p ·{" "}
-                        {formatKda(c.kills, c.deaths, c.assists)} KDA
-                      </span>
-                    </div>
-                    <WinLossBar wins={c.wins} losses={c.losses} compact />
-                  </div>
-                </div>
-              ))}
-            </div>
+            <TopChampions champions={topChampions} />
           </Card>
         </div>
       </div>

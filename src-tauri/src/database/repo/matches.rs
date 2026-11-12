@@ -114,7 +114,9 @@ pub fn recent_for_player(
                 s.gold_earned, s.damage_to_champions, s.vision_score,
                 (SELECT COALESCE(SUM(ts.kills), 0)
                    FROM participants tp JOIN player_stats ts ON ts.participant_id = tp.id
-                  WHERE tp.match_id = p.match_id AND tp.team_id = p.team_id) AS team_kills
+                  WHERE tp.match_id = p.match_id AND tp.team_id = p.team_id) AS team_kills,
+                CASE WHEN c.image IS NULL THEN NULL
+                     ELSE 'https://ddragon.leagueoflegends.com/cdn/' || c.version || '/img/champion/' || c.image END
            FROM participants p
            JOIN matches m ON m.match_id = p.match_id
            JOIN player_stats s ON s.participant_id = p.id
@@ -134,6 +136,7 @@ pub fn recent_for_player(
             duration_sec: r.get(3)?,
             win: r.get(4)?,
             champion: r.get(5)?,
+            champion_icon: r.get(15)?,
             position: r.get(6)?,
             kills,
             deaths: r.get(8)?,

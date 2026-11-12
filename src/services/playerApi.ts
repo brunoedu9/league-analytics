@@ -2,9 +2,10 @@
  * Pesquisa e perfil de jogadores reais (comandos Rust).
  * A pesquisa grava no banco local; a página de perfil sempre lê do banco.
  */
-import { call } from "./tauri";
+import { listen } from "@tauri-apps/api/event";
+import { call, isTauri } from "./tauri";
 import type { Platform, RiotId } from "../types/riot";
-import type { Division, QueueType, RankEntry, Tier } from "../types/models";
+import type { Division, MatchSummary, QueueType, RankEntry, Tier } from "../types/models";
 
 export interface StoredPlayer {
   puuid: string;
@@ -75,3 +76,29 @@ export async function getPlayerProfile(puuid: string): Promise<PlayerProfile> {
 }
 
 export const listPlayers = (limit = 12) => call<StoredPlayer[]>("list_players", { limit });
+
+/** Partidas do jogador salvas no banco local (mais recentes primeiro). */
+export const getRecentMatches = (puuid: string, limit = 50) =>
+  call<MatchSummary[]>("get_recent_matches", { puuid, limit });
+
+export interface SyncResult {
+  added: number;
+  alreadyStored: number;
+  finishedAt: number;
+}
+
+export interface SyncProgress {
+  puuid: string;
+  done: number;
+  total: number;
+}
+
+/** Baixa da Riot as partidas que ainda não estão no banco (até `count`). */
+export const syncMatches = (puuid: string, count = 20) =>
+  call<SyncResult>("sync_player_matches", { puuid, count });
+
+/** Acompanha o progresso da sincronização. Devolve a função para parar de ouvir. */
+export async function onSyncProgress(handler: (p: SyncProgress) => void): Promise<() => void> {
+  if (!isTauri()) return () => {};
+  return listen<SyncProgress>("sync-progress", (event) => handler(event.payload));
+}

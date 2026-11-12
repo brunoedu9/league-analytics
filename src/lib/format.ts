@@ -79,6 +79,10 @@ export const POSITION_LABEL: Record<Position, string> = {
   UTILITY: "Suporte",
 };
 
+/** Rótulo da posição; "—" em modos sem posição. */
+export const positionLabel = (position: string) =>
+  (POSITION_LABEL as Record<string, string>)[position] ?? "—";
+
 export const QUEUE_LABEL: Record<MatchQueue, string> = {
   SOLO: "Ranqueada Solo/Duo",
   FLEX: "Ranqueada Flex",

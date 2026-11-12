@@ -26,6 +26,7 @@ pub fn run() {
             let db = Database::open(&path)?;
             app.manage(db);
             app.manage(services::riot::RiotClient::new()?);
+            app.manage(services::sync::SyncLock::default());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -33,6 +34,7 @@ pub fn run() {
             commands::player::search_player,
             commands::player::get_player_profile,
             commands::player::list_players,
+            commands::sync::sync_player_matches,
             commands::database::db_status,
             commands::database::get_setting,
             commands::database::set_setting,
