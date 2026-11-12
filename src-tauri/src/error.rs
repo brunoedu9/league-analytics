@@ -9,8 +9,11 @@ pub enum AppError {
     #[error("erro de arquivo: {0}")]
     Io(#[from] std::io::Error),
 
+    #[error("cadastre sua chave da Riot API em Configurações para buscar dados novos")]
+    RiotKeyMissing,
+
     #[error(
-        "chave da Riot ausente, inválida ou expirada. Gere uma nova no Developer Portal e atualize RIOT_API_KEY no arquivo .env"
+        "a chave da Riot API foi recusada (inválida ou expirada). Gere uma nova no Riot Developer Portal e atualize em Configurações"
     )]
     RiotKey,
 
@@ -35,7 +38,10 @@ impl AppError {
     pub fn is_remote_failure(&self) -> bool {
         matches!(
             self,
-            AppError::RiotKey | AppError::Network(_) | AppError::RiotUnavailable(_)
+            AppError::RiotKey
+                | AppError::RiotKeyMissing
+                | AppError::Network(_)
+                | AppError::RiotUnavailable(_)
         )
     }
 }

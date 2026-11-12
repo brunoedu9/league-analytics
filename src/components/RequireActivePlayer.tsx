@@ -32,10 +32,16 @@ export function RequireActivePlayer({
         {isTauri() ? (
           <>
             <div style={{ color: "var(--text-primary)", fontWeight: 600 }}>Nenhum jogador principal definido</div>
-            <div style={{ marginTop: 6 }}>
-              Pesquise seu Riot ID na barra superior (ex.: Fulano#BR1). O primeiro jogador pesquisado vira o
-              principal; você pode trocar depois na página <Link to="/player">Perfil do jogador</Link>.
-            </div>
+            <ol className="onboarding">
+              <li>
+                Cadastre sua chave da Riot API em <Link to="/settings">Configurações</Link>.
+              </li>
+              <li>Pesquise seu Riot ID na barra superior (ex.: Fulano#BR1).</li>
+              <li>
+                O primeiro jogador pesquisado vira o principal; dá para trocar depois em{" "}
+                <Link to="/player">Perfil do jogador</Link>.
+              </li>
+            </ol>
           </>
         ) : (
           <div>Disponível apenas no aplicativo desktop (npm run tauri dev).</div>

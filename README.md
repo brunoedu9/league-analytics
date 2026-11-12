@@ -17,6 +17,12 @@ Tauri 2 · React · TypeScript · Rust · SQLite · Recharts
 - WebView2 Runtime
 - VS Code com as extensões Tauri e rust-analyzer (recomendado)
 
+## Chave da Riot API
+
+O app é livre: cada usuário usa a **própria chave**. Gere a sua no [Riot Developer Portal](https://developer.riotgames.com/) e cadastre em **Configurações → Chave da Riot API**. Ela fica guardada no Gerenciador de Credenciais do Windows. Sem chave, o app continua mostrando os dados já salvos.
+
+Para desenvolvimento, também é possível usar `RIOT_API_KEY=...` em um arquivo `.env` na raiz (ignorado pelo Git).
+
 ## Executar
 
 ```bash

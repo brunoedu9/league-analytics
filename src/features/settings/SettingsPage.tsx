@@ -1,4 +1,5 @@
 import { Database, HardDrive } from "lucide-react";
+import { ApiKeyCard } from "./ApiKeyCard";
 import { PageHeader } from "../../components/PageHeader";
 import { Card } from "../../components/Card";
 import { useAsync } from "../../hooks/useAsync";
@@ -47,13 +48,14 @@ function StatusRows({ status }: { status: DbStatus }) {
   );
 }
 
-/** RF11/RF12 — Configurações. Por enquanto mostra o estado do banco local. */
+/** RF11/RF12 — Configurações: chave da Riot API e banco local. */
 export function SettingsPage() {
   const state = useAsync(getDbStatus);
   return (
     <section className="page">
-      <PageHeader title="Configurações" description="Região, sincronização, aparência e preferências." />
+      <PageHeader title="Configurações" description="Chave da Riot API, dados locais e preferências." />
       <div className="grid grid--2">
+        <ApiKeyCard />
         <Card
           title="Banco de dados local"
           subtitle="Os dados ficam no seu computador e continuam acessíveis sem internet."
@@ -65,8 +67,8 @@ export function SettingsPage() {
           )}
           {state.status === "success" && <StatusRows status={state.data} />}
         </Card>
-        <div className="placeholder">Região, sincronização automática e aparência — em construção</div>
       </div>
+      <div className="placeholder">Região padrão, sincronização automática e aparência — em construção</div>
     </section>
   );
 }

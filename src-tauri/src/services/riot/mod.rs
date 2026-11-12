@@ -1,12 +1,13 @@
 //! Cliente da Riot Games API.
 //!
-//! - A chave vem de `RIOT_API_KEY` (arquivo `.env` em desenvolvimento ou
-//!   variável de ambiente). Nunca é embutida no código nem no executável (RNF03).
-//!   O `.env` é relido a cada requisição, então trocar a chave diária não
-//!   exige reiniciar o app.
+//! - A chave é a do próprio usuário, cadastrada em Configurações e guardada no
+//!   cofre de credenciais do sistema (ver `api_key`). Nunca é embutida no código
+//!   nem no executável (RNF03). É lida a cada requisição, então trocar a chave
+//!   não exige reiniciar o app.
 //! - Cada roteamento tem seu próprio controle de ritmo.
 //! - 429: espera o `Retry-After` e tenta de novo (até 3 vezes).
 
+pub mod api_key;
 pub mod dto;
 pub mod rate_limit;
 pub mod routing;
@@ -46,18 +47,24 @@ impl RiotClient {
         &self.http
     }
 
-    /// Lê a chave do `.env` (sem alterar o ambiente do processo) ou da variável de ambiente.
-    fn api_key() -> AppResult<String> {
-        let from_file = dotenvy::dotenv_iter().ok().and_then(|iter| {
-            iter.filter_map(Result::ok)
-                .find(|(k, _)| k == "RIOT_API_KEY")
-                .map(|(_, v)| v)
-        });
-        from_file
-            .or_else(|| std::env::var("RIOT_API_KEY").ok())
-            .map(|k| k.trim().to_string())
-            .filter(|k| !k.is_empty())
-            .ok_or(AppError::RiotKey)
+    /// Testa uma chave (ainda não salva) com uma chamada leve: status da plataforma.
+    pub async fn validate_key(&self, key: &str, platform: &str) -> AppResult<()> {
+        self.throttle(platform).await;
+        let response = self
+            .http
+            .get(format!(
+                "https://{platform}.api.riotgames.com/lol/status/v4/platform-data"
+            ))
+            .header("X-Riot-Token", key)
+            .send()
+            .await
+            .map_err(|e| AppError::Network(e.to_string()))?;
+        match response.status() {
+            s if s.is_success() => Ok(()),
+            StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN => Err(AppError::RiotKey),
+            StatusCode::TOO_MANY_REQUESTS => Ok(()), // a chave existe; só está no limite
+            s => Err(AppError::RiotUnavailable(s.as_u16())),
+        }
     }
 
     /// Espera até poder enviar uma requisição para `routing`.
@@ -79,7 +86,7 @@ impl RiotClient {
 
     /// GET em `https://{routing}.api.riotgames.com{path}`.
     pub async fn get<T: DeserializeOwned>(&self, routing: &str, path: &str) -> AppResult<T> {
-        let key = Self::api_key()?;
+        let key = api_key::require()?;
         let url = format!("https://{routing}.api.riotgames.com{path}");
         for _ in 0..MAX_ATTEMPTS {
             self.throttle(routing).await;

@@ -57,7 +57,7 @@ src-tauri/
 
 | Fase | Arquitetura | Chave |
 |---|---|---|
-| Protótipo pessoal | App → Riot API | Chave de desenvolvimento em variável de ambiente local, fora do Git e do executável |
+| Uso livre (atual) | App → Riot API | **Chave do próprio usuário**, cadastrada em Configurações e guardada no Gerenciador de Credenciais do Windows |
 | Distribuição pública | App → backend seguro / API gateway → Riot API | Chave de produção somente no servidor |
 
 A Riot não permite que a chave de produção seja embutida em executáveis
@@ -72,7 +72,11 @@ deve ser resolvido **antes** da primeira distribuição pública.
 | Personal | Sem expiração informada | 20 req/1 s · 100 req/2 min | Projeto pessoal (ex.: acompanhar as próprias estatísticas); sem alpha/beta aberto |
 | Production | Sem expiração informada | 500 req/10 s · 30.000 req/10 min (inicial) | Produto público; exige protótipo funcionando e aprovação |
 
-Durante o desenvolvimento, a chave fica em `.env` (`RIOT_API_KEY`), que o Git ignora.
+Cada usuário cadastra a própria chave na tela **Configurações**. O app valida o formato (`RGAPI-` + UUID), testa a chave na Riot e só então a salva no **Gerenciador de Credenciais do Windows** (crate `keyring`). A chave nunca vai para o código, o executável, o SQLite ou o Git, e a interface só recebe a versão mascarada (`RGAPI-…07a9`).
+
+Em builds de desenvolvimento, se não houver chave cadastrada, o app aceita `RIOT_API_KEY` do arquivo `.env` (ignorado pelo Git). Builds de release não leem o `.env`.
+
+> **Atenção antes de distribuir:** confirme nas General Policies da Riot (`/policies/general`) se o modelo "cada usuário traz a própria chave" é aceito para o produto que será publicado, e registre o produto no portal.
 
 ### Limites e respostas da Riot API
 

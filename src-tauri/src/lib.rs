@@ -31,6 +31,9 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::app::app_info,
+            commands::api_key::get_api_key_status,
+            commands::api_key::set_api_key,
+            commands::api_key::remove_api_key,
             commands::player::search_player,
             commands::player::get_player_profile,
             commands::player::list_players,
