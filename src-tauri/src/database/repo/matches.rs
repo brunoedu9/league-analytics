@@ -1,8 +1,10 @@
 use std::collections::HashSet;
 
-use rusqlite::{Connection, params};
+use rusqlite::{Connection, OptionalExtension, params};
 
-use crate::database::models::{MatchSummary, NewMatch, queue_label};
+use crate::database::models::{
+    MatchDetails, MatchSummary, NewMatch, ParticipantDetail, queue_label,
+};
 use crate::database::now_ms;
 use crate::error::AppResult;
 
@@ -155,6 +157,81 @@ pub fn recent_for_player(
     Ok(rows.collect::<Result<_, _>>()?)
 }
 
+/// Partida completa com os participantes, na ordem da Riot (1..10).
+pub fn details(conn: &Connection, match_id: &str) -> AppResult<Option<MatchDetails>> {
+    let header = conn
+        .query_row(
+            "SELECT match_id, platform, queue_id, game_mode, game_version,
+                    strftime('%Y-%m-%dT%H:%M:%fZ', started_at / 1000.0, 'unixepoch'), duration_sec
+               FROM matches WHERE match_id = ?1",
+            [match_id],
+            |r| {
+                Ok(MatchDetails {
+                    match_id: r.get(0)?,
+                    platform: r.get(1)?,
+                    queue_id: r.get(2)?,
+                    queue: queue_label(r.get(2)?),
+                    game_mode: r.get(3)?,
+                    game_version: r.get(4)?,
+                    played_at: r.get(5)?,
+                    duration_sec: r.get(6)?,
+                    participants: Vec::new(),
+                })
+            },
+        )
+        .optional()?;
+    let Some(mut details) = header else {
+        return Ok(None);
+    };
+
+    let mut stmt = conn.prepare(
+        "SELECT p.participant_index, p.puuid, p.riot_id_game_name, p.riot_id_tagline, p.team_id,
+                COALESCE(c.name, p.champion_name),
+                CASE WHEN c.image IS NULL THEN NULL
+                     ELSE 'https://ddragon.leagueoflegends.com/cdn/' || c.version || '/img/champion/' || c.image END,
+                p.team_position, p.win,
+                s.champ_level, s.kills, s.deaths, s.assists, s.minions_killed + s.neutral_minions,
+                s.gold_earned, s.damage_to_champions, s.damage_taken, s.vision_score,
+                s.wards_placed, s.wards_killed, s.control_wards, s.turret_takedowns,
+                s.dragon_kills, s.baron_kills
+           FROM participants p
+           JOIN player_stats s ON s.participant_id = p.id
+           LEFT JOIN champions c ON c.champion_id = p.champion_id
+          WHERE p.match_id = ?1
+          ORDER BY p.participant_index",
+    )?;
+    let rows = stmt.query_map([match_id], |r| {
+        Ok(ParticipantDetail {
+            participant_index: r.get(0)?,
+            puuid: r.get(1)?,
+            riot_id_game_name: r.get(2)?,
+            riot_id_tagline: r.get(3)?,
+            team_id: r.get(4)?,
+            champion: r.get(5)?,
+            champion_icon: r.get(6)?,
+            position: r.get(7)?,
+            win: r.get(8)?,
+            champ_level: r.get(9)?,
+            kills: r.get(10)?,
+            deaths: r.get(11)?,
+            assists: r.get(12)?,
+            cs: r.get(13)?,
+            gold: r.get(14)?,
+            damage: r.get(15)?,
+            damage_taken: r.get(16)?,
+            vision_score: r.get(17)?,
+            wards_placed: r.get(18)?,
+            wards_killed: r.get(19)?,
+            control_wards: r.get(20)?,
+            turret_takedowns: r.get(21)?,
+            dragon_kills: r.get(22)?,
+            baron_kills: r.get(23)?,
+        })
+    })?;
+    details.participants = rows.collect::<Result<_, _>>()?;
+    Ok(Some(details))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -236,6 +313,40 @@ mod tests {
             assert_eq!(
                 orphans, 0,
                 "participantes e estatísticas são removidos em cascata"
+            );
+            Ok(())
+        })
+        .unwrap();
+    }
+}
+
+#[cfg(test)]
+mod details_tests {
+    use super::*;
+    use crate::database::Database;
+    use crate::database::repo::fixtures::sample_match;
+
+    #[test]
+    fn returns_all_participants_in_order() {
+        let db = Database::open_in_memory().unwrap();
+        db.with(|c| {
+            assert!(details(c, "BR1_x")?.is_none());
+            insert(c, &sample_match("BR1_1", "me", true, 2_000))?;
+            let d = details(c, "BR1_1")?.expect("partida salva");
+            assert_eq!(d.queue, "SOLO");
+            assert_eq!(d.duration_sec, 1_800);
+            assert_eq!(d.participants.len(), 10);
+            let me = &d.participants[0];
+            assert_eq!(
+                (me.participant_index, me.puuid.as_str(), me.team_id),
+                (1, "me", 100)
+            );
+            assert_eq!(me.cs, 210);
+            assert!(me.win);
+            assert!(
+                d.participants[5..]
+                    .iter()
+                    .all(|p| p.team_id == 200 && !p.win)
             );
             Ok(())
         })

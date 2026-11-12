@@ -120,3 +120,47 @@ pub fn queue_label(queue_id: i64) -> &'static str {
         _ => "OTHER",
     }
 }
+
+/// Partida completa para a tela de análise (RF04).
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MatchDetails {
+    pub match_id: String,
+    pub platform: String,
+    pub queue: &'static str,
+    pub queue_id: i64,
+    pub game_mode: String,
+    pub game_version: String,
+    pub played_at: String, // ISO 8601
+    pub duration_sec: i64,
+    pub participants: Vec<ParticipantDetail>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ParticipantDetail {
+    pub participant_index: i64,
+    pub puuid: String,
+    pub riot_id_game_name: Option<String>,
+    pub riot_id_tagline: Option<String>,
+    pub team_id: i64,
+    pub champion: String,
+    pub champion_icon: Option<String>,
+    pub position: String,
+    pub win: bool,
+    pub champ_level: i64,
+    pub kills: i64,
+    pub deaths: i64,
+    pub assists: i64,
+    pub cs: i64,
+    pub gold: i64,
+    pub damage: i64,
+    pub damage_taken: i64,
+    pub vision_score: i64,
+    pub wards_placed: i64,
+    pub wards_killed: i64,
+    pub control_wards: i64,
+    pub turret_takedowns: i64,
+    pub dragon_kills: i64,
+    pub baron_kills: i64,
+}

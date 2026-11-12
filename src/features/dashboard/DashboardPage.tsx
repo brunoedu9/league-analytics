@@ -156,7 +156,7 @@ function Dashboard({ puuid }: { puuid: string }) {
             >
               <div className="match-list">
                 {recent.slice(0, 7).map((m) => (
-                  <MatchRow key={m.matchId} match={m} />
+                  <MatchRow key={m.matchId} match={m} focusPuuid={puuid} />
                 ))}
               </div>
             </Card>

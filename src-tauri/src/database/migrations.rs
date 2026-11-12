@@ -8,7 +8,10 @@ use rusqlite::Connection;
 
 use crate::error::{AppError, AppResult};
 
-const MIGRATIONS: &[&str] = &[include_str!("../../migrations/0001_initial.sql")];
+const MIGRATIONS: &[&str] = &[
+    include_str!("../../migrations/0001_initial.sql"),
+    include_str!("../../migrations/0002_match_timelines.sql"),
+];
 
 /// Versão de esquema que este executável conhece.
 pub fn latest_version() -> u32 {
@@ -54,7 +57,23 @@ mod tests {
                 |r| r.get(0),
             )
             .unwrap();
-        assert_eq!(tables, 8);
+        assert_eq!(tables, 9);
+    }
+
+    #[test]
+    fn upgrades_existing_v1_database() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(MIGRATIONS[0]).unwrap();
+        conn.pragma_update(None, "user_version", 1).unwrap();
+        assert_eq!(run(&mut conn).unwrap(), latest_version());
+        let has_timelines: i64 = conn
+            .query_row(
+                "SELECT count(*) FROM sqlite_master WHERE name = 'match_timelines'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(has_timelines, 1);
     }
 
     #[test]
