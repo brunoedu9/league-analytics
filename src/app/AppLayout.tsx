@@ -25,7 +25,7 @@ export function AppLayout() {
           <div key={section}>
             <div className="sidebar__section">{section}</div>
             <nav className="sidebar__nav">
-              {items.map(({ path, label, icon: Icon }) => (
+              {items.map(({ path, label, icon: Icon, soon }) => (
                 <NavLink
                   key={path}
                   to={path}
@@ -33,12 +33,13 @@ export function AppLayout() {
                 >
                   <Icon size={17} />
                   {label}
+                  {soon && <span className="soon-tag">em breve</span>}
                 </NavLink>
               ))}
             </nav>
           </div>
         ))}
-        <div className="sidebar__footer">v0.1.0 · dados locais</div>
+        <div className="sidebar__footer">v{__APP_VERSION__} · dados locais</div>
       </aside>
       <div className="main">
         <Topbar />

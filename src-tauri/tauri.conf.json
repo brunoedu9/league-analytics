@@ -20,18 +20,42 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self' ipc: http://ipc.localhost; img-src 'self' data: https://ddragon.leagueoflegends.com; style-src 'self' 'unsafe-inline'; connect-src 'self' ipc: http://ipc.localhost"
     }
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": [
+      "nsis",
+      "msi"
+    ],
+    "publisher": "League Analytics",
+    "homepage": "https://github.com/brunoedu9/league-analytics",
+    "copyright": "© 2026 Bruno — licença MIT",
+    "license": "MIT",
+    "category": "Utility",
+    "shortDescription": "Estatísticas de League of Legends no seu computador",
+    "longDescription": "Aplicativo desktop gratuito para consultar, armazenar e analisar estatísticas de jogadores de League of Legends usando a Riot Games API com a sua própria chave. Os dados ficam no seu computador e continuam disponíveis sem internet.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": [
+          "PortugueseBR",
+          "English"
+        ],
+        "displayLanguageSelector": false
+      },
+      "webviewInstallMode": {
+        "type": "embedBootstrapper",
+        "silent": true
+      }
+    }
   }
 }

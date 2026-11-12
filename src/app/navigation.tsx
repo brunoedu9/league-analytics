@@ -26,6 +26,8 @@ export interface NavItem {
   label: string;
   icon: LucideIcon;
   section: "Jogador" | "Análise" | "Competitivo" | "Sistema";
+  /** Módulo ainda não implementado (aparece com a etiqueta "em breve"). */
+  soon?: boolean;
   element: ReactNode;
 }
 
@@ -35,9 +37,9 @@ export const navigation: NavItem[] = [
   { path: "/player", label: "Perfil do jogador", icon: User, section: "Jogador", element: <PlayerPage /> },
   { path: "/matches", label: "Histórico de partidas", icon: History, section: "Jogador", element: <MatchesPage /> },
   { path: "/match-analysis", label: "Análise de partidas", icon: Microscope, section: "Análise", element: <MatchAnalysisPage /> },
-  { path: "/performance", label: "Desempenho", icon: BarChart3, section: "Análise", element: <PerformancePage /> },
+  { path: "/performance", label: "Desempenho", icon: BarChart3, section: "Análise", soon: true, element: <PerformancePage /> },
   { path: "/champions", label: "Campeões", icon: Swords, section: "Análise", element: <ChampionsPage /> },
-  { path: "/rankings", label: "Rankings", icon: Medal, section: "Competitivo", element: <RankingsPage /> },
-  { path: "/comparison", label: "Comparação", icon: GitCompareArrows, section: "Competitivo", element: <ComparisonPage /> },
+  { path: "/rankings", label: "Rankings", icon: Medal, section: "Competitivo", soon: true, element: <RankingsPage /> },
+  { path: "/comparison", label: "Comparação", icon: GitCompareArrows, section: "Competitivo", soon: true, element: <ComparisonPage /> },
   { path: "/settings", label: "Configurações", icon: Settings, section: "Sistema", element: <SettingsPage /> },
 ];
