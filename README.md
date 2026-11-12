@@ -44,8 +44,10 @@ League of Legends usando a API oficial da Riot Games.
 **Requisitos:** Windows 10 ou 11 (64 bits) e conexão com a internet para baixar dados novos.
 
 1. Abra a página de **[Releases](https://github.com/brunoedu9/league-analytics/releases)** e baixe a versão mais recente:
-   - `League Analytics_x.y.z_x64-setup.exe` (recomendado), ou
-   - `League Analytics_x.y.z_x64_en-US.msi`.
+   - o arquivo terminado em **`_x64-setup.exe`** (recomendado; ex.: `League-Analytics_0.1.0_x64-setup.exe`), ou
+   - o arquivo **`.msi`**.
+
+   Para conferir a integridade, compare o SHA-256 do arquivo com o `SHA256SUMS.txt` da release.
 2. Execute o instalador. O `.exe` instala só para o seu usuário e **não pede senha de administrador**
    (o `.msi` instala para todos os usuários e pode pedir).
 3. Se aparecer a tela azul **"O Windows protegeu o computador"**, clique em **Mais informações** e depois em
