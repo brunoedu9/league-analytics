@@ -1,0 +1,52 @@
+name: Release
+
+# Publica uma versão nova ao enviar uma tag "vX.Y.Z":
+#   git tag v0.1.0 && git push origin v0.1.0
+# O workflow compila o app no Windows e anexa os instaladores (.exe e .msi)
+# a um GitHub Release com o mesmo nome da tag.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build and publish installers
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "League Analytics ${{ github.ref_name }}"
+          releaseBody: |
+            ## Como instalar
+            1. Baixe **League Analytics_x.y.z_x64-setup.exe** abaixo (ou o `.msi`).
+            2. Execute o instalador. Se o Windows mostrar "O Windows protegeu o computador", clique em **Mais informações → Executar assim mesmo** (o app ainda não tem certificado de assinatura de código).
+            3. Abra o app, vá em **Configurações** e cadastre sua chave da Riot API.
+
+            Guia completo: veja o README do repositório.
+          releaseDraft: false
+          prerelease: false
