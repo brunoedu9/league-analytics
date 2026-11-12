@@ -1,11 +1,92 @@
+import { useMemo, useState } from "react";
 import { PageHeader } from "../../components/PageHeader";
+import { Card } from "../../components/Card";
+import { MatchRow } from "../../components/MatchRow";
+import { Segmented } from "../../components/Segmented";
+import { WinLossBar } from "../../components/WinLossBar";
+import { AsyncView } from "../../components/AsyncView";
+import { useAsync } from "../../hooks/useAsync";
+import { getMatches } from "../../services/playerService";
+import { aggregate } from "../../lib/stats";
+import { formatDecimal } from "../../lib/format";
+import type { MatchQueue, MatchSummary } from "../../types/models";
 
-/** RF03 */
-export function MatchesPage() {
-  return (
-    <section>
-      <PageHeader title="Histórico de partidas" description="Partidas armazenadas localmente." />
-      <div className="placeholder">Em construção — RF03</div>
-    </section>
+type QueueFilter = "ALL" | MatchQueue;
+type ResultFilter = "ALL" | "WIN" | "LOSS";
+
+/** RF03 — Histórico de partidas armazenadas localmente. */
+function Matches({ matches }: { matches: MatchSummary[] }) {
+  const [queue, setQueue] = useState<QueueFilter>("ALL");
+  const [result, setResult] = useState<ResultFilter>("ALL");
+
+  const filtered = useMemo(
+    () =>
+      matches.filter(
+        (m) =>
+          (queue === "ALL" || m.queue === queue) &&
+          (result === "ALL" || (result === "WIN") === m.win),
+      ),
+    [matches, queue, result],
   );
+  const stats = aggregate(filtered);
+
+  return (
+    <div className="page">
+      <PageHeader title="Histórico de partidas" description={`${matches.length} partidas armazenadas localmente`} />
+
+      <div className="filters">
+        <Segmented
+          ariaLabel="Fila"
+          value={queue}
+          onChange={setQueue}
+          options={[
+            { value: "ALL", label: "Todas" },
+            { value: "SOLO", label: "Solo/Duo" },
+            { value: "FLEX", label: "Flex" },
+            { value: "NORMAL", label: "Normal" },
+          ]}
+        />
+        <Segmented
+          ariaLabel="Resultado"
+          value={result}
+          onChange={setResult}
+          options={[
+            { value: "ALL", label: "Todos" },
+            { value: "WIN", label: "Vitórias" },
+            { value: "LOSS", label: "Derrotas" },
+          ]}
+        />
+      </div>
+
+      <Card
+        flush
+        title={`${filtered.length} partidas`}
+        subtitle={
+          filtered.length
+            ? `KDA ${formatDecimal(stats.kda)} · ${formatDecimal(stats.csPerMin)} CS/min`
+            : undefined
+        }
+        actions={
+          filtered.length ? (
+            <div style={{ width: 240 }}>
+              <WinLossBar wins={stats.wins} losses={stats.losses} />
+            </div>
+          ) : undefined
+        }
+      >
+        <div className="match-list" style={{ marginTop: 4 }}>
+          {filtered.length === 0 ? (
+            <div className="empty">Nenhuma partida com esses filtros.</div>
+          ) : (
+            filtered.map((m) => <MatchRow key={m.matchId} match={m} />)
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+export function MatchesPage() {
+  const state = useAsync(getMatches);
+  return <AsyncView state={state}>{(data) => <Matches matches={data} />}</AsyncView>;
 }
