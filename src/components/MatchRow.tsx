@@ -1,6 +1,5 @@
 import type { MatchSummary } from "../types/models";
 import {
-  POSITION_LABEL,
   QUEUE_SHORT,
   formatCompact,
   formatDecimal,
@@ -8,6 +7,7 @@ import {
   formatKda,
   formatPercent,
   formatRelative,
+  positionLabel,
 } from "../lib/format";
 import { ChampionIcon } from "./ChampionIcon";
 import { ResultBadge } from "./Badge";
@@ -17,11 +17,11 @@ export function MatchRow({ match }: { match: MatchSummary }) {
   return (
     <div className={`match-row ${match.win ? "is-win" : "is-loss"}`}>
       <div className="match-row__stripe" />
-      <ChampionIcon name={match.champion} size={40} />
+      <ChampionIcon name={match.champion} src={match.championIcon} size={40} />
       <div>
         <div className="match-row__champ">{match.champion}</div>
         <div className="match-row__sub">
-          {QUEUE_SHORT[match.queue]} · {POSITION_LABEL[match.position]}
+          {QUEUE_SHORT[match.queue]} · {positionLabel(match.position)}
         </div>
       </div>
       <div className="match-row__cell num">

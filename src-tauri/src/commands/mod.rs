@@ -3,3 +3,4 @@
 pub mod app;
 pub mod database;
 pub mod player;
+pub mod sync;

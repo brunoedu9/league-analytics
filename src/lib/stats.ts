@@ -57,7 +57,7 @@ export function championStats(matches: MatchSummary[]): ChampionStats[] {
   return [...groups.entries()]
     .map(([champion, list]) => {
       const agg = aggregate(list);
-      const positionCount = new Map<Position, number>();
+      const positionCount = new Map<Position | "", number>();
       for (const m of list) positionCount.set(m.position, (positionCount.get(m.position) ?? 0) + 1);
       const mainPosition = [...positionCount.entries()].sort((a, b) => b[1] - a[1])[0][0];
       return {
@@ -71,6 +71,7 @@ export function championStats(matches: MatchSummary[]): ChampionStats[] {
         csPerMin: agg.csPerMin,
         mainPosition,
         lastPlayedAt: list[0].playedAt,
+        championIcon: list[0].championIcon ?? null,
       };
     })
     .sort((a, b) => b.games - a.games);

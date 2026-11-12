@@ -73,6 +73,8 @@ pub struct MatchSummary {
     pub duration_sec: i64,
     pub win: bool,
     pub champion: String,
+    /// URL do ícone no Data Dragon (None até os campeões serem baixados).
+    pub champion_icon: Option<String>,
     pub position: String,
     pub kills: i64,
     pub deaths: i64,

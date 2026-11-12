@@ -8,12 +8,12 @@ import { AsyncView } from "../../components/AsyncView";
 import { useAsync } from "../../hooks/useAsync";
 import { getChampionStats } from "../../services/playerService";
 import {
-  POSITION_LABEL,
   formatDecimal,
   formatKda,
   formatPercent,
   formatRelative,
   kdaRatio,
+  positionLabel,
 } from "../../lib/format";
 import type { ChampionStats } from "../../types/models";
 
@@ -94,11 +94,11 @@ function Champions({ champions }: { champions: ChampionStats[] }) {
               <tr key={c.champion}>
                 <td style={{ paddingLeft: 20 }}>
                   <div className="table__champ">
-                    <ChampionIcon name={c.champion} size={34} />
+                    <ChampionIcon name={c.champion} src={c.championIcon} size={34} />
                     <div>
                       {c.champion}
                       <div className="muted" style={{ fontSize: 12, fontWeight: 400 }}>
-                        {POSITION_LABEL[c.mainPosition]}
+                        {positionLabel(c.mainPosition)}
                       </div>
                     </div>
                   </div>

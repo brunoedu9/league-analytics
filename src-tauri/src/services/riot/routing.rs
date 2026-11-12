@@ -23,7 +23,6 @@ pub fn account_region(platform: &str) -> &'static str {
 }
 
 /// Roteamento regional para match-v5 (inclui sea para Oceania e Sudeste Asiático).
-#[allow(dead_code)] // usado pela sincronização de partidas (próximo passo)
 pub fn match_region(platform: &str) -> &'static str {
     match platform {
         "euw1" | "eun1" | "tr1" | "ru" | "me1" => "europe",

@@ -14,7 +14,8 @@ export function useAsync<T>(fn: () => Promise<T>, deps: DependencyList = []): As
 
   useEffect(() => {
     let cancelled = false;
-    setState({ status: "loading" });
+    // Ao recarregar, mantém os dados anteriores na tela (evita piscar o skeleton).
+    setState((prev) => (prev.status === "success" ? prev : { status: "loading" }));
     fn().then(
       (data) => !cancelled && setState({ status: "success", data }),
       (error: unknown) => !cancelled && setState({ status: "error", error }),

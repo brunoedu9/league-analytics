@@ -4,11 +4,7 @@
 //! a Riot API só escreve por meio da sincronização. Modelo: `docs/DATABASE.md`.
 
 pub mod migrations;
-// As funções de escrita (insert/upsert/record) serão usadas pela sincronização
-// com a Riot API (etapa 6); até lá só os testes as chamam.
-#[allow(dead_code)]
 pub mod models;
-#[allow(dead_code)]
 pub mod repo;
 
 use std::path::{Path, PathBuf};

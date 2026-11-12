@@ -41,6 +41,11 @@ impl RiotClient {
         })
     }
 
+    /// Cliente HTTP compartilhado (também usado pelo Data Dragon).
+    pub fn http(&self) -> &reqwest::Client {
+        &self.http
+    }
+
     /// Lê a chave do `.env` (sem alterar o ambiente do processo) ou da variável de ambiente.
     fn api_key() -> AppResult<String> {
         let from_file = dotenvy::dotenv_iter().ok().and_then(|iter| {
