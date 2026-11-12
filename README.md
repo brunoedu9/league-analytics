@@ -30,6 +30,10 @@ npm run tauri dev
 - [Arquitetura](docs/ARCHITECTURE.md)
 - [Banco de dados](docs/DATABASE.md)
 
+## Licença
+
+[MIT](LICENSE): livre para usar, modificar e distribuir.
+
 ## Aviso legal
 
 League Analytics não é endossado pela Riot Games e não reflete as opiniões da
