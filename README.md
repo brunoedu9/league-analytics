@@ -21,6 +21,7 @@ League of Legends usando a API oficial da Riot Games.
 - [Onde ficam os seus dados](#onde-ficam-os-seus-dados)
 - [Problemas comuns](#problemas-comuns)
 - [Para desenvolvedores](#para-desenvolvedores)
+- [Mapa do código](#mapa-do-código)
 - [Licença](#licença) · [Aviso legal](#aviso-legal)
 
 ---
@@ -227,6 +228,187 @@ Os instaladores ficam em `src-tauri/target/release/bundle/` (`nsis/` e `msi/`).
 - [Requisitos (SRS)](docs/SRS.md)
 - [Arquitetura](docs/ARCHITECTURE.md)
 - [Banco de dados](docs/DATABASE.md)
+
+---
+
+## Mapa do código
+
+Guia de onde fica cada coisa. O app tem duas partes que conversam por **comandos Tauri**:
+
+```
+Interface (React, src/)  ──invoke("comando")──▶  Backend (Rust, src-tauri/src/)  ──▶  SQLite local
+                                                         │
+                                                         └──▶  Riot API / Data Dragon (só para buscar dados novos)
+```
+
+**Regra principal:** as telas leem **sempre** do banco local. A Riot só é chamada quando o usuário
+pesquisa um jogador, clica em **Atualizar** ou abre a linha do tempo de uma partida pela primeira vez.
+
+### Onde mexer para…
+
+| Quero… | Arquivos |
+|---|---|
+| Criar uma tela nova | Página em `src/features/<modulo>/`, rota e item da sidebar em `src/app/navigation.tsx` (rotas com parâmetro em `src/app/App.tsx`) |
+| Mostrar um dado novo que já está no banco | Consulta em `src-tauri/src/database/repo/`, comando em `src-tauri/src/commands/`, registro em `src-tauri/src/lib.rs`, chamada em `src/services/` |
+| Guardar um dado novo da Riot | Nova migration em `src-tauri/migrations/` (+ lista em `database/migrations.rs`), campo em `services/riot/dto.rs`, conversão em `services/sync.rs`, gravação em `database/repo/` |
+| Chamar um endpoint novo da Riot | `RiotClient::get` em `services/riot/mod.rs` (já respeita os limites e trata 429); roteamento em `services/riot/routing.rs` |
+| Mudar cores, espaçamentos ou o tema | `src/styles/global.css` (variáveis no topo do arquivo) |
+| Mudar um cálculo (KDA, CS/min, win rate) | `src/lib/stats.ts` e `src/lib/format.ts` (interface); `database/repo/matches.rs` (participação em abates) |
+| Mudar mensagens de erro | `src-tauri/src/error.rs` |
+| Mudar o instalador, a janela ou a segurança | `src-tauri/tauri.conf.json` |
+| Mudar o CI ou a publicação | `.github/workflows/ci.yml` e `.github/workflows/release.yml` |
+
+### Raiz do projeto
+
+| Arquivo | Responsabilidade |
+|---|---|
+| `package.json` | Dependências e scripts do frontend (`dev`, `build`, `tauri`) |
+| `vite.config.ts` | Configuração do Vite (porta 1420 usada pelo Tauri, injeção da versão do app) |
+| `tsconfig.json`, `tsconfig.node.json` | Configuração do TypeScript |
+| `index.html` | Página HTML que carrega o React |
+| `assets/app-icon.svg` | Ícone original do app. Para regerar os ícones: `npx tauri icon assets/app-icon.svg` |
+| `LICENSE` | Licença MIT |
+| `.gitignore`, `.gitattributes` | Arquivos ignorados (inclui `.env` e chaves) e padronização de quebras de linha (LF) |
+| `.github/workflows/ci.yml` | CI: checagem de tipos, build, `cargo fmt`, `clippy` e testes em cada PR |
+| `.github/workflows/release.yml` | Publicação: compila e anexa os instaladores ao GitHub Release ao criar uma tag `vX.Y.Z` |
+| `.vscode/extensions.json` | Extensões recomendadas do VS Code |
+| `.claude/launch.json` | Configuração do servidor de desenvolvimento usada pelo assistente de código |
+| `docs/` | Requisitos (SRS), arquitetura e modelo do banco de dados |
+
+### Backend em Rust: `src-tauri/`
+
+| Arquivo | Responsabilidade |
+|---|---|
+| `Cargo.toml` | Dependências do Rust (Tauri, rusqlite, reqwest, keyring, tokio...) |
+| `tauri.conf.json` | Nome, versão, janela, política de segurança (CSP) e configuração dos instaladores |
+| `capabilities/default.json` | Permissões que a interface tem dentro do Tauri |
+| `build.rs` | Script de build do Tauri (não precisa mexer) |
+| `migrations/0001_initial.sql` | Cria as tabelas: jogadores, partidas, participantes, estatísticas, elo, campeões, sincronizações, configurações |
+| `migrations/0002_match_timelines.sql` | Cria o cache da linha do tempo das partidas |
+| `src/main.rs` | Ponto de entrada do executável; apenas chama `lib.rs` |
+| `src/lib.rs` | Inicializa o app: abre o banco, cria o cliente da Riot e **registra todos os comandos** |
+| `src/error.rs` | Tipo de erro único (`AppError`) e as mensagens exibidas ao usuário |
+
+**Comandos** (`src/commands/`): a "porta de entrada" chamada pela interface. Ficam finos: validam a entrada e delegam para `services/` ou `database/repo/`.
+
+| Arquivo | Comandos |
+|---|---|
+| `commands/mod.rs` | Lista os módulos de comandos |
+| `commands/app.rs` | `app_info`: nome e versão do app |
+| `commands/api_key.rs` | `get_api_key_status`, `set_api_key` (valida, testa na Riot e salva), `remove_api_key` |
+| `commands/player.rs` | `search_player` (Riot → banco), `get_player_profile`, `list_players` |
+| `commands/sync.rs` | `sync_player_matches`: baixa as partidas que faltam e emite o evento `sync-progress` |
+| `commands/matches.rs` | `get_match_details` (10 participantes) e `get_match_timeline` (ouro por minuto) |
+| `commands/database.rs` | `db_status`, `get_setting`/`set_setting`, `get_recent_matches`, `get_rank_history`; também `find_player` e `get_player_ranks` (disponíveis, ainda não usados pela interface) |
+
+**Serviços** (`src/services/`): regras que combinam a Riot API com o banco local.
+
+| Arquivo | Responsabilidade |
+|---|---|
+| `services/mod.rs` | Lista os serviços |
+| `services/player.rs` | Pesquisa por Riot ID: conta → invocador → elo; grava no banco; sem internet, devolve o perfil salvo com aviso |
+| `services/sync.rs` | Sincronização de partidas: lista os IDs, ignora as já salvas, baixa e grava as novas; converte o JSON da Riot para o formato do banco |
+| `services/timeline.rs` | Linha do tempo da partida: busca uma vez na Riot, resume em ouro por minuto e guarda em cache |
+| `services/ddragon.rs` | Data Dragon: nomes (pt-BR) e ícones dos campeões, baixados só quando sai um patch novo |
+| `services/riot/mod.rs` | `RiotClient`: requisições HTTP com a chave do usuário, controle de ritmo e tratamento de 401/403/404/429/5xx |
+| `services/riot/api_key.rs` | Chave do usuário no Gerenciador de Credenciais do Windows: ler, validar formato, mascarar, salvar, remover |
+| `services/riot/rate_limit.rs` | Janelas de limite da chave (20/s e 100/2 min) por roteamento |
+| `services/riot/routing.rs` | Plataformas (`br1`, `euw1`...) e roteamento regional (`americas`, `europe`, `asia`, `sea`) |
+| `services/riot/dto.rs` | Formatos das respostas da Riot (conta, invocador, elo, partida) |
+
+**Banco de dados** (`src/database/`): acesso ao SQLite. Os repositórios são funções simples que recebem a conexão.
+
+| Arquivo | Responsabilidade |
+|---|---|
+| `database/mod.rs` | Abre o banco (WAL, chaves estrangeiras) e expõe `Database::with` para acesso exclusivo à conexão |
+| `database/migrations.rs` | Aplica as migrations em ordem, usando `PRAGMA user_version` |
+| `database/models.rs` | Estruturas gravadas e lidas (`PlayerRecord`, `NewMatch`, `MatchSummary`, `MatchDetails`...) |
+| `database/repo/mod.rs` | Lista os repositórios |
+| `database/repo/players.rs` | Jogadores: inserir/atualizar, buscar por PUUID ou Riot ID, listar recentes, marcar sincronização |
+| `database/repo/matches.rs` | Partidas: gravar (uma vez, com 10 participantes), IDs já salvos, resumo por jogador, detalhes completos |
+| `database/repo/ranks.rs` | Histórico de elo: grava só quando muda; último elo por fila; série para o gráfico de PDL |
+| `database/repo/champions.rs` | Tabela de campeões do Data Dragon |
+| `database/repo/timelines.rs` | Cache da linha do tempo (ouro por participante por minuto) |
+| `database/repo/settings.rs` | Configurações chave/valor (ex.: `active_player`) |
+| `database/repo/sync.rs` | Histórico de sincronizações (início, fim, status, erro) |
+| `database/repo/status.rs` | Resumo do banco para a tela de Configurações |
+| `database/repo/fixtures.rs` | Dados de exemplo usados só nos testes |
+
+> Os testes de cada módulo ficam no próprio arquivo, no bloco `#[cfg(test)]`.
+
+### Interface em React: `src/`
+
+| Arquivo | Responsabilidade |
+|---|---|
+| `main.tsx` | Ponto de entrada: monta o React e carrega o CSS global |
+| `vite-env.d.ts` | Tipos globais do Vite e a constante `__APP_VERSION__` |
+| `styles/global.css` | Tema escuro inteiro: variáveis de cor, layout, cards, tabelas, gráficos e componentes |
+
+**App** (`src/app/`): estrutura geral.
+
+| Arquivo | Responsabilidade |
+|---|---|
+| `app/App.tsx` | Rotas do app (incluindo `/player/:puuid` e `/match-analysis/:matchId`) |
+| `app/navigation.tsx` | Itens da sidebar: caminho, nome, ícone, seção e etiqueta "em breve" |
+| `app/AppLayout.tsx` | Layout com sidebar, barra superior e área de conteúdo |
+| `app/Topbar.tsx` | Busca por Riot ID, seleção de região e indicador online/offline |
+| `app/ActivePlayer.tsx` | Contexto do **jogador principal** (salvo nas configurações do banco) |
+
+**Telas** (`src/features/`): uma pasta por módulo do SRS.
+
+| Arquivo | Tela |
+|---|---|
+| `features/dashboard/DashboardPage.tsx` | Dashboard do jogador principal |
+| `features/player/PlayerPage.tsx` | Perfil de qualquer jogador e lista de pesquisas recentes |
+| `features/matches/MatchesPage.tsx` | Histórico de partidas com filtros |
+| `features/match-analysis/MatchAnalysisPage.tsx` | Análise de uma partida e seleção de partida |
+| `features/champions/ChampionsPage.tsx` | Estatísticas por campeão |
+| `features/settings/SettingsPage.tsx` | Configurações e estado do banco local |
+| `features/settings/ApiKeyCard.tsx` | Cadastro e teste da chave da Riot API |
+| `features/performance/`, `features/rankings/`, `features/comparison/` | Telas provisórias ("em breve") |
+
+**Componentes reutilizáveis** (`src/components/`).
+
+| Arquivo | Responsabilidade |
+|---|---|
+| `Card.tsx`, `PageHeader.tsx` | Cartão com título e cabeçalho de página |
+| `StatCard.tsx` | Indicador numérico com variação (↑/↓) |
+| `Badge.tsx` | Etiquetas, incluindo Vitória/Derrota |
+| `ProfileCard.tsx` | Identificação do jogador + elo de cada fila |
+| `RankBadge.tsx` | Emblema do elo |
+| `WinLossBar.tsx` | Barra de vitórias/derrotas |
+| `ChampionIcon.tsx` | Ícone do campeão (Data Dragon), com iniciais quando offline |
+| `MatchRow.tsx` | Linha de partida; clicar abre a análise |
+| `TopChampions.tsx` | Lista de campeões mais jogados |
+| `Segmented.tsx` | Botões de filtro (ex.: fila, resultado) |
+| `AsyncView.tsx` | Mostra carregamento, erro ou conteúdo |
+| `RequireActivePlayer.tsx` | Exige jogador principal; senão, mostra o passo a passo inicial |
+| `charts/ChartTooltip.tsx` | Tooltip e estilos compartilhados dos gráficos |
+| `charts/LpHistoryChart.tsx` | Gráfico de evolução de PDL |
+| `charts/WinRateTrendChart.tsx` | Taxa de vitória móvel (10 partidas) |
+| `charts/GoldDiffChart.tsx` | Vantagem de ouro entre os times por minuto |
+
+**Serviços da interface** (`src/services/`): única camada que chama o Rust.
+
+| Arquivo | Responsabilidade |
+|---|---|
+| `services/tauri.ts` | `call()`: `invoke` com erro amigável fora do app desktop |
+| `services/playerApi.ts` | Jogadores, partidas, sincronização, elo e análise de partida |
+| `services/apiKeyService.ts` | Chave da Riot API |
+| `services/databaseService.ts` | Estado do banco e configurações |
+
+**Lógica e tipos**.
+
+| Arquivo | Responsabilidade |
+|---|---|
+| `hooks/useAsync.ts` | Carrega dados assíncronos com estados de carregamento e erro |
+| `hooks/usePlayerRefresh.ts` | Lógica do botão **Atualizar** (perfil, elo e partidas, com progresso) |
+| `lib/stats.ts` | Agregações: win rate, KDA, CS/min, visão, estatísticas por campeão |
+| `lib/format.ts` | Formatação em pt-BR (números, datas, duração) e nomes de elo, posição e fila |
+| `lib/ladder.ts` | Converte elo em escala contínua para o gráfico de PDL |
+| `lib/regions.ts` | Regiões disponíveis na busca |
+| `types/models.ts` | Tipos de domínio compartilhados (partida, elo, campeão...) |
+| `types/riot.ts` | Plataformas e Riot ID |
 
 ---
 
