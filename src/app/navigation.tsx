@@ -1,4 +1,16 @@
 import type { ReactNode } from "react";
+import type { LucideIcon } from "lucide-react";
+import {
+  BarChart3,
+  GitCompareArrows,
+  History,
+  LayoutDashboard,
+  Medal,
+  Microscope,
+  Settings,
+  Swords,
+  User,
+} from "lucide-react";
 import { DashboardPage } from "../features/dashboard/DashboardPage";
 import { PlayerPage } from "../features/player/PlayerPage";
 import { MatchesPage } from "../features/matches/MatchesPage";
@@ -12,18 +24,20 @@ import { SettingsPage } from "../features/settings/SettingsPage";
 export interface NavItem {
   path: string;
   label: string;
+  icon: LucideIcon;
+  section: "Jogador" | "Análise" | "Competitivo" | "Sistema";
   element: ReactNode;
 }
 
 /** Os 9 módulos definidos no SRS (seção 7), na ordem da sidebar. */
 export const navigation: NavItem[] = [
-  { path: "/dashboard", label: "Dashboard", element: <DashboardPage /> },
-  { path: "/player", label: "Perfil do jogador", element: <PlayerPage /> },
-  { path: "/matches", label: "Histórico de partidas", element: <MatchesPage /> },
-  { path: "/match-analysis", label: "Análise de partidas", element: <MatchAnalysisPage /> },
-  { path: "/performance", label: "Desempenho", element: <PerformancePage /> },
-  { path: "/champions", label: "Campeões", element: <ChampionsPage /> },
-  { path: "/rankings", label: "Rankings", element: <RankingsPage /> },
-  { path: "/comparison", label: "Comparação", element: <ComparisonPage /> },
-  { path: "/settings", label: "Configurações", element: <SettingsPage /> },
+  { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard, section: "Jogador", element: <DashboardPage /> },
+  { path: "/player", label: "Perfil do jogador", icon: User, section: "Jogador", element: <PlayerPage /> },
+  { path: "/matches", label: "Histórico de partidas", icon: History, section: "Jogador", element: <MatchesPage /> },
+  { path: "/match-analysis", label: "Análise de partidas", icon: Microscope, section: "Análise", element: <MatchAnalysisPage /> },
+  { path: "/performance", label: "Desempenho", icon: BarChart3, section: "Análise", element: <PerformancePage /> },
+  { path: "/champions", label: "Campeões", icon: Swords, section: "Análise", element: <ChampionsPage /> },
+  { path: "/rankings", label: "Rankings", icon: Medal, section: "Competitivo", element: <RankingsPage /> },
+  { path: "/comparison", label: "Comparação", icon: GitCompareArrows, section: "Competitivo", element: <ComparisonPage /> },
+  { path: "/settings", label: "Configurações", icon: Settings, section: "Sistema", element: <SettingsPage /> },
 ];
