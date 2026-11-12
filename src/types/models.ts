@@ -14,7 +14,7 @@ export type QueueType = "RANKED_SOLO_5x5" | "RANKED_FLEX_SR";
 
 export type Position = "TOP" | "JUNGLE" | "MIDDLE" | "BOTTOM" | "UTILITY";
 
-export type MatchQueue = "SOLO" | "FLEX" | "NORMAL" | "ARAM";
+export type MatchQueue = "SOLO" | "FLEX" | "NORMAL" | "ARAM" | "OTHER";
 
 export interface Player {
   puuid: string;

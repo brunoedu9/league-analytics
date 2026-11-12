@@ -84,6 +84,7 @@ export const QUEUE_LABEL: Record<MatchQueue, string> = {
   FLEX: "Ranqueada Flex",
   NORMAL: "Normal",
   ARAM: "ARAM",
+  OTHER: "Outro modo",
 };
 
 export const QUEUE_SHORT: Record<MatchQueue, string> = {
@@ -91,4 +92,5 @@ export const QUEUE_SHORT: Record<MatchQueue, string> = {
   FLEX: "Flex",
   NORMAL: "Normal",
   ARAM: "ARAM",
+  OTHER: "Outro modo",
 };

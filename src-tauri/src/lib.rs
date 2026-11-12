@@ -10,13 +10,32 @@
 
 mod commands;
 mod database;
+mod error;
 mod services;
+
+use tauri::Manager;
+
+use database::{DB_FILE_NAME, Database};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![commands::app::app_info])
+        .setup(|app| {
+            let path = app.path().app_data_dir()?.join(DB_FILE_NAME);
+            let db = Database::open(&path)?;
+            app.manage(db);
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            commands::app::app_info,
+            commands::database::db_status,
+            commands::database::get_setting,
+            commands::database::set_setting,
+            commands::database::find_player,
+            commands::database::get_player_ranks,
+            commands::database::get_recent_matches,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
